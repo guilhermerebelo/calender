@@ -52,3 +52,21 @@ export function buildMonthGrid(monthDate: Date) {
 export function addMonths(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth() + amount, 1);
 }
+
+export function eachDateKeyInRange(startKey: string, endKey: string) {
+  const start = fromDateKey(startKey);
+  const end = fromDateKey(endKey);
+  const keys: string[] = [];
+  const cursor = new Date(start);
+
+  while (cursor <= end) {
+    keys.push(toDateKey(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return keys;
+}
+
+export function isDateKeyInRange(dateKey: string, startKey: string, endKey: string) {
+  return dateKey >= startKey && dateKey <= endKey;
+}
