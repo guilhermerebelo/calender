@@ -1,4 +1,4 @@
-# calender
+# Calendario
 
 Sistema em React para planejar eventos usando um calendario mensal, visao diaria e lista lateral.
 
@@ -55,7 +55,7 @@ A tela principal tem duas areas:
 - Calendario mensal no lado esquerdo.
 - Lista de eventos no menu lateral direito.
 
-No topo do calender existem controles para navegar entre os meses:
+No topo do calendario existem controles para navegar entre os meses:
 
 - Seta para voltar um mes.
 - Botao `Hoje` para retornar ao mes atual.
@@ -112,14 +112,14 @@ Tambem e possivel pintar dias para marcar etapas, reservas, deslocamentos ou per
 Para pintar um periodo:
 
 1. Clique com o botao direito em um dia.
-2. Clique em `Pintar calender`.
+2. Clique em `Pintar calendario`.
 3. Escolha a data de inicio e a data de fim.
 4. Abra o seletor de cor e escolha uma das 8 cores disponiveis.
 5. Clique em `Pintar periodo`.
 
 O sistema nao permite sobrescrever dias ja pintados. Se qualquer dia do novo periodo ja estiver pintado, a pintura nao sera salva.
 
-Os periodos pintados aparecem no menu lateral direito, na secao `calender pintado`, onde tambem podem ser removidos.
+Os periodos pintados aparecem no menu lateral direito, na secao `Calendario pintado`, onde tambem podem ser removidos.
 
 ## Atalhos
 

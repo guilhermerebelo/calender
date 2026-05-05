@@ -15,7 +15,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { FormEvent, MouseEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent, useEffect, useMemo, useState } from "react";
 import {
   addMonths,
   buildMonthGrid,
@@ -63,8 +63,12 @@ const inputClass =
 
 function nextHour(time: string) {
   const [hour = "9", minute = "0"] = time.split(":");
-  const value = Math.min(Number(hour) + 1, 23);
-  return `${String(value).padStart(2, "0")}:${minute.padStart(2, "0")}`;
+  const numericHour = Number(hour);
+
+  if (!Number.isFinite(numericHour)) return "10:00";
+  if (numericHour >= 23) return "23:59";
+
+  return `${String(numericHour + 1).padStart(2, "0")}:${minute.padStart(2, "0")}`;
 }
 
 const emptyDraft = (date: string, startTime = "09:00"): EventDraft => ({
@@ -94,7 +98,7 @@ export function App() {
 
   useEffect(() => {
     const closeMenu = () => setContextMenu(null);
-    const handleKey = (event: KeyboardEvent) => {
+    const handleKey = (event: globalThis.KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setDraft(null);
       setPaintDraft(null);
@@ -236,7 +240,20 @@ export function App() {
 
   function handleDayContextMenu(event: MouseEvent<HTMLDivElement>, date: string) {
     event.preventDefault();
-    setContextMenu({ x: event.clientX, y: event.clientY, date });
+    const menuWidth = 220;
+    const menuHeight = 96;
+    setContextMenu({
+      x: Math.min(event.clientX, window.innerWidth - menuWidth - 8),
+      y: Math.min(event.clientY, window.innerHeight - menuHeight - 8),
+      date,
+    });
+  }
+
+  function handleDayKeyDown(event: ReactKeyboardEvent<HTMLDivElement>, date: string) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+
+    event.preventDefault();
+    setDayViewDate(date);
   }
 
   function toggleDayExpansion(event: MouseEvent<HTMLButtonElement>, date: string) {
@@ -255,10 +272,10 @@ export function App() {
   return (
     <main className="min-h-screen bg-slate-100 font-sans text-slate-900 lg:h-screen lg:overflow-hidden">
       <div className="grid min-h-screen gap-4 p-3 lg:h-screen lg:grid-cols-[minmax(0,1fr)_370px] lg:p-4">
-        <section className={`${panelClass} flex min-h-0 flex-col p-3.5`} aria-label="calender">
+        <section className={`${panelClass} flex min-h-0 flex-col p-3.5`} aria-label="Calendario">
           <header className="flex min-h-[50px] items-center justify-between gap-3 border-b border-slate-200 pb-3">
             <div>
-              <span className={eyebrowClass}>calender</span>
+              <span className={eyebrowClass}>Calendario</span>
               <h1 className="mt-1 text-[clamp(1.32rem,1.75vw,1.85rem)] font-extrabold leading-tight text-slate-950">{monthLabel(visibleMonth)}</h1>
             </div>
             <div className="flex items-center gap-2">
@@ -306,6 +323,7 @@ export function App() {
                   key={day.key}
                   onClick={() => setDayViewDate(day.key)}
                   onContextMenu={(event) => handleDayContextMenu(event, day.key)}
+                  onKeyDown={(event) => handleDayKeyDown(event, day.key)}
                   role="button"
                   style={paintedStyle}
                   tabIndex={0}
@@ -400,7 +418,7 @@ export function App() {
           <div className="mt-3 flex max-h-[34vh] min-h-48 flex-col border-t border-slate-200 pt-3">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <span className={eyebrowClass}>calender pintado</span>
+                <span className={eyebrowClass}>Calendario pintado</span>
                 <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">Dias</h2>
               </div>
               <Layers size={18} />
@@ -442,7 +460,7 @@ export function App() {
           </button>
           <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-slate-800 hover:bg-teal-50 hover:text-teal-800" type="button" onClick={() => openPaintCalendar(contextMenu.date)}>
             <Paintbrush size={16} />
-            Pintar calender
+            Pintar calendario
           </button>
         </div>
       )}
@@ -548,7 +566,7 @@ export function App() {
           <section className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
               <div>
-                <span className={eyebrowClass}>Pintar calender</span>
+                <span className={eyebrowClass}>Pintar calendario</span>
                 <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">Periodo</h2>
               </div>
               <button className={iconButtonClass} type="button" onClick={closePaintForm} aria-label="Fechar">
@@ -597,7 +615,7 @@ export function App() {
                 )}
               </div>
 
-              {paintError && <p className="m-0 rounded-md border border-red-500/40 bg-red-500/10 p-2.5 text-sm text-red-200">{paintError}</p>}
+              {paintError && <p className="m-0 rounded-md border border-red-200 bg-red-50 p-2.5 text-sm font-semibold text-red-700">{paintError}</p>}
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className={metaClass}>
