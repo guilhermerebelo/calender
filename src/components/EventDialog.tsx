@@ -13,6 +13,9 @@ type EventDialogProps = {
 };
 
 export function EventDialog({ draft, editing, onClose, onSubmit, onDraftChange }: EventDialogProps) {
+  const hasRange = draft.startDate !== draft.endDate;
+  const datesAreComplete = /^\d{4}-\d{2}-\d{2}$/.test(draft.startDate) && /^\d{4}-\d{2}-\d{2}$/.test(draft.endDate);
+
   return (
     <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/60 p-4" role="presentation" onMouseDown={onClose}>
       <section
@@ -24,7 +27,9 @@ export function EventDialog({ draft, editing, onClose, onSubmit, onDraftChange }
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 p-4">
           <div>
             <span className={eyebrowClass}>{editing ? "Editar" : "Novo"} evento</span>
-            <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">{fullDateLabel(draft.date)}</h2>
+            <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">
+              {datesAreComplete ? (hasRange ? `${fullDateLabel(draft.startDate)} - ${fullDateLabel(draft.endDate)}` : fullDateLabel(draft.startDate)) : "Periodo do evento"}
+            </h2>
           </div>
           <button className={iconButtonClass} type="button" onClick={onClose} aria-label="Fechar">
             <X size={18} />
@@ -36,10 +41,14 @@ export function EventDialog({ draft, editing, onClose, onSubmit, onDraftChange }
             Titulo
             <input className={inputClass} value={draft.title} onChange={(event) => onDraftChange({ ...draft, title: event.target.value })} autoFocus required />
           </label>
-          <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr]">
+          <div className="grid gap-3 md:grid-cols-[1.2fr_1.2fr_1fr_1fr]">
             <label className="grid gap-2 text-sm font-extrabold text-slate-300">
-              Data
-              <input className={inputClass} type="date" value={draft.date} onChange={(event) => onDraftChange({ ...draft, date: event.target.value })} required />
+              Data inicio
+              <input className={inputClass} type="date" value={draft.startDate} onChange={(event) => onDraftChange({ ...draft, startDate: event.target.value })} required />
+            </label>
+            <label className="grid gap-2 text-sm font-extrabold text-slate-300">
+              Data fim
+              <input className={inputClass} type="date" value={draft.endDate} onChange={(event) => onDraftChange({ ...draft, endDate: event.target.value })} required />
             </label>
             <label className="grid gap-2 text-sm font-extrabold text-slate-300">
               Inicio

@@ -25,15 +25,22 @@ export function loadEvents(): TravelEvent[] {
     const parsed = JSON.parse(stored);
     if (!Array.isArray(parsed)) return [];
     return parsed.flatMap((event): TravelEvent[] => {
-      if (!event || typeof event !== "object" || !isDateKey(event.date) || !isString(event.title)) return [];
+      if (!event || typeof event !== "object" || !isString(event.title)) return [];
+
+      const rawStartDate = event.startDate ?? event.date;
+      const rawEndDate = event.endDate ?? event.date ?? rawStartDate;
+      if (!isDateKey(rawStartDate) || !isDateKey(rawEndDate)) return [];
 
       const startTime = event.startTime ?? event.time ?? "09:00";
       const normalizedStartTime = isTime(startTime) ? startTime : "09:00";
       const normalizedEndTime = isTime(event.endTime) ? event.endTime : nextHour(normalizedStartTime);
+      const startDate = rawStartDate <= rawEndDate ? rawStartDate : rawEndDate;
+      const endDate = rawStartDate <= rawEndDate ? rawEndDate : rawStartDate;
 
       return [{
         id: isString(event.id) && event.id ? event.id : crypto.randomUUID(),
-        date: event.date,
+        startDate,
+        endDate,
         startTime: normalizedStartTime,
         endTime: normalizedEndTime > normalizedStartTime ? normalizedEndTime : nextHour(normalizedStartTime),
         title: event.title,

@@ -1,6 +1,7 @@
 export type TravelEvent = {
   id: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   startTime: string;
   endTime: string;
   title: string;
@@ -11,7 +12,8 @@ export type TravelEvent = {
 
 export type EventDraft = {
   title: string;
-  date: string;
+  startDate: string;
+  endDate: string;
   startTime: string;
   endTime: string;
   comments: string;

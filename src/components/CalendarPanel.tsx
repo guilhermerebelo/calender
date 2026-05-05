@@ -19,9 +19,11 @@ type CalendarPanelProps = {
   expandedDays: Set<string>;
   paintedPeriods: PaintedPeriod[];
   rightPanelOpen: boolean;
+  selectedRange: { startDate: string; endDate: string } | null;
   onVisibleMonthChange: (date: Date) => void;
   onRightPanelToggle: () => void;
-  onDayOpen: (date: string) => void;
+  onDaySelect: (event: MouseEvent<HTMLDivElement>, date: string) => void;
+  onDayCreate: (date: string) => void;
   onDayContextMenu: (event: MouseEvent<HTMLDivElement>, date: string) => void;
   onDayExpansionToggle: (event: MouseEvent<HTMLButtonElement>, date: string) => void;
 };
@@ -32,9 +34,11 @@ export function CalendarPanel({
   expandedDays,
   paintedPeriods,
   rightPanelOpen,
+  selectedRange,
   onVisibleMonthChange,
   onRightPanelToggle,
-  onDayOpen,
+  onDaySelect,
+  onDayCreate,
   onDayContextMenu,
   onDayExpansionToggle,
 }: CalendarPanelProps) {
@@ -44,7 +48,7 @@ export function CalendarPanel({
     if (event.key !== "Enter" && event.key !== " ") return;
 
     event.preventDefault();
-    onDayOpen(date);
+    onDayCreate(date);
   }
 
   function paintForDay(date: string) {
@@ -102,6 +106,7 @@ export function CalendarPanel({
           const dayEvents = eventsByDate[day.key] ?? [];
           const expanded = expandedDays.has(day.key);
           const painted = paintForDay(day.key);
+          const selected = selectedRange ? isDateKeyInRange(day.key, selectedRange.startDate, selectedRange.endDate) : false;
           const paintedStyle = painted
             ? {
                 borderColor: painted.color,
@@ -113,12 +118,14 @@ export function CalendarPanel({
             <div
               className={`min-h-0 cursor-pointer overflow-hidden rounded-lg border p-1.5 text-left outline-none transition hover:-translate-y-0.5 hover:border-cyan-400 hover:shadow-md hover:shadow-cyan-950/40 ${
                 day.inCurrentMonth ? "border-slate-700 bg-slate-950 text-slate-100" : "border-slate-800 bg-slate-900 text-slate-500"
-              } ${day.isToday ? "ring-2 ring-cyan-400/70" : ""}`}
+              } ${day.isToday ? "ring-2 ring-cyan-400/70" : ""} ${selected ? "border-cyan-300 bg-cyan-500/15 shadow-inner shadow-cyan-950/60" : ""}`}
               key={day.key}
-              onClick={() => onDayOpen(day.key)}
+              onClick={(event) => onDaySelect(event, day.key)}
+              onDoubleClick={() => onDayCreate(day.key)}
               onContextMenu={(event) => onDayContextMenu(event, day.key)}
               onKeyDown={(event) => handleDayKeyDown(event, day.key)}
-              role="button"
+              role="gridcell"
+              aria-selected={selected}
               style={paintedStyle}
               tabIndex={0}
             >
@@ -143,7 +150,7 @@ export function CalendarPanel({
                 <div className="mt-1.5 flex min-w-0 flex-col gap-1">
                   {dayEvents.map((event) => (
                     <span className="block truncate rounded border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-1 text-[0.68rem] text-cyan-100" key={event.id}>
-                      {event.startTime}-{event.endTime} {event.title}
+                      {event.title}
                     </span>
                   ))}
                 </div>

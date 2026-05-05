@@ -20,9 +20,19 @@ import {
 import { nextHour } from "./timeUtils";
 import { EventDraft, PaintedPeriod, PaintDraft, TravelEvent } from "./types";
 
-const emptyDraft = (date: string, startTime = "09:00"): EventDraft => ({
+type DateRange = {
+  startDate: string;
+  endDate: string;
+};
+
+type DaySelection = DateRange & {
+  anchorDate: string;
+};
+
+const emptyDraft = (date: string, startTime = "09:00", range: DateRange = { startDate: date, endDate: date }): EventDraft => ({
   title: "",
-  date,
+  startDate: range.startDate,
+  endDate: range.endDate,
   startTime,
   endTime: nextHour(startTime),
   comments: "",
@@ -33,7 +43,8 @@ export function App() {
   const [events, setEvents] = useState<TravelEvent[]>(() => loadEvents());
   const [paintedPeriods, setPaintedPeriods] = useState<PaintedPeriod[]>(() => loadPaintedPeriods());
   const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set(loadExpandedDays()));
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; date: string } | null>(null);
+  const [selection, setSelection] = useState<DaySelection | null>(null);
+  const [contextMenu, setContextMenu] = useState<({ x: number; y: number; date: string } & DateRange) | null>(null);
   const [dayViewDate, setDayViewDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<TravelEvent | null>(null);
   const [draft, setDraft] = useState<EventDraft | null>(null);
@@ -64,7 +75,7 @@ export function App() {
   }, []);
 
   const sortedEvents = useMemo(
-    () => [...events].sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`)),
+    () => [...events].sort((a, b) => `${a.startDate} ${a.startTime}`.localeCompare(`${b.startDate} ${b.startTime}`)),
     [events]
   );
 
@@ -75,7 +86,9 @@ export function App() {
 
   const eventsByDate = useMemo(() => {
     return events.reduce<Record<string, TravelEvent[]>>((acc, event) => {
-      acc[event.date] = [...(acc[event.date] ?? []), event].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      eachDateKeyInRange(event.startDate, event.endDate).forEach((date) => {
+        acc[date] = [...(acc[date] ?? []), event].sort((a, b) => a.startTime.localeCompare(b.startTime));
+      });
       return acc;
     }, {});
   }, [events]);
@@ -91,9 +104,19 @@ export function App() {
     setPaintError("");
   }
 
-  function openCreateEvent(date: string, startTime = "09:00") {
+  function normalizeRange(startDate: string, endDate: string): DateRange {
+    return startDate <= endDate ? { startDate, endDate } : { startDate: endDate, endDate: startDate };
+  }
+
+  function rangeFromSelectionOrDate(date: string): DateRange {
+    return selection && date >= selection.startDate && date <= selection.endDate
+      ? { startDate: selection.startDate, endDate: selection.endDate }
+      : { startDate: date, endDate: date };
+  }
+
+  function openCreateEvent(date: string, startTime = "09:00", range: DateRange = { startDate: date, endDate: date }) {
     setEditingEvent(null);
-    setDraft(emptyDraft(date, startTime));
+    setDraft(emptyDraft(date, startTime, normalizeRange(range.startDate, range.endDate)));
     setContextMenu(null);
   }
 
@@ -101,17 +124,18 @@ export function App() {
     setEditingEvent(event);
     setDraft({
       title: event.title,
-      date: event.date,
+      startDate: event.startDate,
+      endDate: event.endDate,
       startTime: event.startTime,
       endTime: event.endTime,
       comments: event.comments,
     });
   }
 
-  function openPaintCalendar(date: string) {
+  function openPaintCalendar(range: DateRange) {
     setPaintDraft({
-      startDate: date,
-      endDate: date,
+      startDate: range.startDate,
+      endDate: range.endDate,
       color: defaultColor.value,
       colorName: defaultColor.name,
     });
@@ -121,13 +145,14 @@ export function App() {
 
   function submitEvent(event: FormEvent) {
     event.preventDefault();
-    if (!draft || !draft.title.trim()) return;
+    if (!draft || !draft.title.trim() || !draft.startDate || !draft.endDate) return;
 
     const now = new Date().toISOString();
     const normalizedDraft = {
       ...draft,
       title: draft.title.trim(),
       comments: draft.comments.trim(),
+      ...normalizeRange(draft.startDate, draft.endDate),
       endTime: draft.endTime <= draft.startTime ? nextHour(draft.startTime) : draft.endTime,
     };
 
@@ -181,14 +206,30 @@ export function App() {
     setColorPopoverOpen(false);
   }
 
+  function handleDaySelect(event: MouseEvent<HTMLDivElement>, date: string) {
+    const nextRange =
+      event.shiftKey && selection
+        ? { ...normalizeRange(selection.anchorDate, date), anchorDate: selection.anchorDate }
+        : { startDate: date, endDate: date, anchorDate: date };
+
+    setSelection(nextRange);
+    setContextMenu(null);
+  }
+
   function handleDayContextMenu(event: MouseEvent<HTMLDivElement>, date: string) {
     event.preventDefault();
     const menuWidth = 220;
-    const menuHeight = 96;
+    const menuHeight = 150;
+    const range = rangeFromSelectionOrDate(date);
+
+    setSelection((current) =>
+      current && date >= current.startDate && date <= current.endDate ? current : { ...range, anchorDate: date }
+    );
     setContextMenu({
       x: Math.min(event.clientX, window.innerWidth - menuWidth - 8),
       y: Math.min(event.clientY, window.innerHeight - menuHeight - 8),
       date,
+      ...range,
     });
   }
 
@@ -210,9 +251,11 @@ export function App() {
           expandedDays={expandedDays}
           paintedPeriods={paintedPeriods}
           rightPanelOpen={rightPanelOpen}
+          selectedRange={selection ? { startDate: selection.startDate, endDate: selection.endDate } : null}
           onVisibleMonthChange={setVisibleMonth}
           onRightPanelToggle={() => setRightPanelOpen((open) => !open)}
-          onDayOpen={setDayViewDate}
+          onDaySelect={handleDaySelect}
+          onDayCreate={(date) => openCreateEvent(date, "09:00", rangeFromSelectionOrDate(date))}
           onDayContextMenu={handleDayContextMenu}
           onDayExpansionToggle={toggleDayExpansion}
         />
@@ -234,8 +277,14 @@ export function App() {
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          onAddEvent={() => openCreateEvent(contextMenu.date)}
-          onPaintCalendar={() => openPaintCalendar(contextMenu.date)}
+          startDate={contextMenu.startDate}
+          endDate={contextMenu.endDate}
+          onViewDay={() => {
+            setDayViewDate(contextMenu.date);
+            setContextMenu(null);
+          }}
+          onAddEvent={() => openCreateEvent(contextMenu.startDate, "09:00", contextMenu)}
+          onPaintCalendar={() => openPaintCalendar(contextMenu)}
         />
       )}
 

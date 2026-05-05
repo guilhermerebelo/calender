@@ -22,6 +22,12 @@ export function EventsPanel({
   onDeletePaintedPeriod,
   onClose,
 }: EventsPanelProps) {
+  function eventDateLabel(event: TravelEvent) {
+    return event.startDate === event.endDate
+      ? fullDateLabel(event.startDate)
+      : `${fullDateLabel(event.startDate)} - ${fullDateLabel(event.endDate)}`;
+  }
+
   return (
     <aside className={`${panelClass} flex min-h-[420px] flex-col p-3.5`} aria-label="Eventos cadastrados">
       <div className="flex items-center justify-between gap-3">
@@ -57,7 +63,7 @@ export function EventsPanel({
               <div>
                 <strong className="mb-2 block">{event.title}</strong>
                 <span className={metaClass}>
-                  <CalendarDays size={14} /> {fullDateLabel(event.date)}
+                  <CalendarDays size={14} /> {eventDateLabel(event)}
                 </span>
                 <span className={`${metaClass} mt-1`}>
                   <Clock size={14} /> {event.startTime} ate {event.endTime}
