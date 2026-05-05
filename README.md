@@ -7,7 +7,8 @@ Sistema em React para planejar eventos usando um calendario mensal, visao diaria
 - Vite
 - React
 - TypeScript
-- CSS puro
+- Tailwind CSS 3
+- Plus Jakarta Sans e JetBrains Mono
 - Lucide React para icones
 - LocalStorage para salvar os dados no navegador
 
@@ -143,5 +144,5 @@ src/
   dateUtils.ts  Funcoes de calendario e formatacao de datas
   storage.ts    Leitura e escrita no localStorage
   types.ts      Tipos TypeScript dos eventos
-  styles.css    Layout e tema escuro
+  styles.css    Somente diretivas Tailwind
 ```
