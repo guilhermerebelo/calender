@@ -1,4 +1,4 @@
-import { Edit3, X } from "lucide-react";
+import { Edit3, Trash2, X } from "lucide-react";
 import { dayHours } from "../constants";
 import { fullDateLabel } from "../dateUtils";
 import { eyebrowClass, iconButtonClass, miniButtonClass } from "../uiClasses";
@@ -10,9 +10,10 @@ type DayDialogProps = {
   onClose: () => void;
   onCreateEvent: (date: string, startTime?: string) => void;
   onEditEvent: (event: TravelEvent) => void;
+  onDeleteEvent: (eventId: string) => void;
 };
 
-export function DayDialog({ date, events, onClose, onCreateEvent, onEditEvent }: DayDialogProps) {
+export function DayDialog({ date, events, onClose, onCreateEvent, onEditEvent, onDeleteEvent }: DayDialogProps) {
   function eventDateLabel(event: TravelEvent) {
     return event.startDate === event.endDate
       ? fullDateLabel(event.startDate)
@@ -49,23 +50,37 @@ export function DayDialog({ date, events, onClose, onCreateEvent, onEditEvent }:
                 >
                   {hour}
                 </button>
-                <div className="flex min-h-[52px] flex-col justify-center gap-2 px-2.5 py-2">
+                <div className="min-h-[52px] px-2.5 py-2">
                   {hourEvents.length === 0 && <span className="text-sm text-slate-500">Livre</span>}
-                  {hourEvents.map((event) => (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900 p-2.5 shadow-sm shadow-black/20" key={event.id}>
-                      <div>
-                        <strong>{event.title}</strong>
-                        <span className="mt-0.5 block text-xs text-slate-400">
-                          {event.startTime} ate {event.endTime}
-                        </span>
-                        {event.startDate !== event.endDate && <span className="mt-0.5 block text-xs text-slate-500">{eventDateLabel(event)}</span>}
-                        {event.comments && <p className="mt-1 text-sm text-slate-400">{event.comments}</p>}
-                      </div>
-                      <button className={miniButtonClass} type="button" onClick={() => onEditEvent(event)} aria-label="Editar evento">
-                        <Edit3 size={14} />
-                      </button>
+                  {hourEvents.length > 0 && (
+                    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                      {hourEvents.map((event) => (
+                        <div className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900 p-2.5 shadow-sm shadow-black/20" key={event.id}>
+                          <div className="min-w-0">
+                            <strong className="block truncate">{event.title}</strong>
+                            <span className="mt-0.5 block text-xs text-slate-400">
+                              {event.startTime} ate {event.endTime}
+                            </span>
+                            {event.startDate !== event.endDate && <span className="mt-0.5 block text-xs text-slate-500">{eventDateLabel(event)}</span>}
+                            {event.comments && <p className="mt-1 line-clamp-3 text-sm text-slate-400">{event.comments}</p>}
+                          </div>
+                          <div className="flex shrink-0 gap-1.5">
+                            <button className={miniButtonClass} type="button" onClick={() => onEditEvent(event)} aria-label="Editar evento">
+                              <Edit3 size={14} />
+                            </button>
+                            <button
+                              className={`${miniButtonClass} hover:border-red-400 hover:bg-red-950 hover:text-red-200`}
+                              type="button"
+                              onClick={() => onDeleteEvent(event.id)}
+                              aria-label="Excluir evento"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             );

@@ -9,11 +9,9 @@ import { defaultColor } from "./constants";
 import { eachDateKeyInRange, fullDateLabel } from "./dateUtils";
 import {
   loadEvents,
-  loadExpandedDays,
   loadPaintedPeriods,
   loadRightPanelOpen,
   saveEvents,
-  saveExpandedDays,
   savePaintedPeriods,
   saveRightPanelOpen,
 } from "./storage";
@@ -42,11 +40,11 @@ export function App() {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [events, setEvents] = useState<TravelEvent[]>(() => loadEvents());
   const [paintedPeriods, setPaintedPeriods] = useState<PaintedPeriod[]>(() => loadPaintedPeriods());
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(() => new Set(loadExpandedDays()));
   const [selection, setSelection] = useState<DaySelection | null>(null);
   const [contextMenu, setContextMenu] = useState<({ x: number; y: number; date: string } & DateRange) | null>(null);
   const [dayViewDate, setDayViewDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<TravelEvent | null>(null);
+  const [editingPaintedPeriod, setEditingPaintedPeriod] = useState<PaintedPeriod | null>(null);
   const [draft, setDraft] = useState<EventDraft | null>(null);
   const [paintDraft, setPaintDraft] = useState<PaintDraft | null>(null);
   const [paintError, setPaintError] = useState("");
@@ -55,7 +53,6 @@ export function App() {
 
   useEffect(() => saveEvents(events), [events]);
   useEffect(() => savePaintedPeriods(paintedPeriods), [paintedPeriods]);
-  useEffect(() => saveExpandedDays([...expandedDays]), [expandedDays]);
   useEffect(() => saveRightPanelOpen(rightPanelOpen), [rightPanelOpen]);
 
   useEffect(() => {
@@ -100,6 +97,7 @@ export function App() {
     setPaintDraft(null);
     setDayViewDate(null);
     setEditingEvent(null);
+    setEditingPaintedPeriod(null);
     setColorPopoverOpen(false);
     setPaintError("");
   }
@@ -133,6 +131,7 @@ export function App() {
   }
 
   function openPaintCalendar(range: DateRange) {
+    setEditingPaintedPeriod(null);
     setPaintDraft({
       startDate: range.startDate,
       endDate: range.endDate,
@@ -141,6 +140,18 @@ export function App() {
     });
     setPaintError("");
     setContextMenu(null);
+  }
+
+  function openEditPaintedPeriod(period: PaintedPeriod) {
+    setEditingPaintedPeriod(period);
+    setPaintDraft({
+      startDate: period.startDate,
+      endDate: period.endDate,
+      color: period.color,
+      colorName: period.colorName,
+    });
+    setPaintError("");
+    setColorPopoverOpen(false);
   }
 
   function submitEvent(event: FormEvent) {
@@ -183,7 +194,10 @@ export function App() {
     const startDate = paintDraft.startDate <= paintDraft.endDate ? paintDraft.startDate : paintDraft.endDate;
     const endDate = paintDraft.startDate <= paintDraft.endDate ? paintDraft.endDate : paintDraft.startDate;
     const selectedDays = eachDateKeyInRange(startDate, endDate);
-    const paintedDays = new Set(paintedPeriods.flatMap((period) => eachDateKeyInRange(period.startDate, period.endDate)));
+    const otherPaintedPeriods = editingPaintedPeriod
+      ? paintedPeriods.filter((period) => period.id !== editingPaintedPeriod.id)
+      : paintedPeriods;
+    const paintedDays = new Set(otherPaintedPeriods.flatMap((period) => eachDateKeyInRange(period.startDate, period.endDate)));
     const blockedDay = selectedDays.find((day) => paintedDays.has(day));
 
     if (blockedDay) {
@@ -191,18 +205,35 @@ export function App() {
       return;
     }
 
-    setPaintedPeriods((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        startDate,
-        endDate,
-        color: paintDraft.color,
-        colorName: paintDraft.colorName,
-        createdAt: new Date().toISOString(),
-      },
-    ]);
+    if (editingPaintedPeriod) {
+      setPaintedPeriods((current) =>
+        current.map((period) =>
+          period.id === editingPaintedPeriod.id
+            ? {
+                ...period,
+                startDate,
+                endDate,
+                color: paintDraft.color,
+                colorName: paintDraft.colorName,
+              }
+            : period
+        )
+      );
+    } else {
+      setPaintedPeriods((current) => [
+        ...current,
+        {
+          id: crypto.randomUUID(),
+          startDate,
+          endDate,
+          color: paintDraft.color,
+          colorName: paintDraft.colorName,
+          createdAt: new Date().toISOString(),
+        },
+      ]);
+    }
     setPaintDraft(null);
+    setEditingPaintedPeriod(null);
     setColorPopoverOpen(false);
   }
 
@@ -233,22 +264,12 @@ export function App() {
     });
   }
 
-  function toggleDayExpansion(event: MouseEvent<HTMLButtonElement>, date: string) {
-    event.stopPropagation();
-    setExpandedDays((current) => {
-      const next = new Set(current);
-      next.has(date) ? next.delete(date) : next.add(date);
-      return next;
-    });
-  }
-
   return (
     <main className="min-h-screen bg-slate-950 font-sans text-slate-100 lg:h-screen lg:overflow-hidden">
-      <div className={`grid min-h-screen gap-4 p-3 lg:h-screen lg:p-4 ${rightPanelOpen ? "lg:grid-cols-[minmax(0,1fr)_370px]" : "lg:grid-cols-1"}`}>
+      <div className={`grid min-h-screen gap-2 p-1.5 lg:h-screen lg:p-2 ${rightPanelOpen ? "lg:grid-cols-[minmax(0,1fr)_370px]" : "lg:grid-cols-1"}`}>
         <CalendarPanel
           visibleMonth={visibleMonth}
           eventsByDate={eventsByDate}
-          expandedDays={expandedDays}
           paintedPeriods={paintedPeriods}
           rightPanelOpen={rightPanelOpen}
           selectedRange={selection ? { startDate: selection.startDate, endDate: selection.endDate } : null}
@@ -256,8 +277,8 @@ export function App() {
           onRightPanelToggle={() => setRightPanelOpen((open) => !open)}
           onDaySelect={handleDaySelect}
           onDayCreate={(date) => openCreateEvent(date, "09:00", rangeFromSelectionOrDate(date))}
+          onDayView={setDayViewDate}
           onDayContextMenu={handleDayContextMenu}
-          onDayExpansionToggle={toggleDayExpansion}
         />
 
         {rightPanelOpen && (
@@ -266,6 +287,7 @@ export function App() {
             paintedPeriods={sortedPaints}
             onCreateEvent={openCreateEvent}
             onEditEvent={openEditEvent}
+            onEditPaintedPeriod={openEditPaintedPeriod}
             onDeleteEvent={(eventId) => setEvents((current) => current.filter((item) => item.id !== eventId))}
             onDeletePaintedPeriod={(periodId) => setPaintedPeriods((current) => current.filter((item) => item.id !== periodId))}
             onClose={() => setRightPanelOpen(false)}
@@ -295,6 +317,7 @@ export function App() {
           onClose={() => setDayViewDate(null)}
           onCreateEvent={openCreateEvent}
           onEditEvent={openEditEvent}
+          onDeleteEvent={(eventId) => setEvents((current) => current.filter((item) => item.id !== eventId))}
         />
       )}
 
@@ -314,10 +337,12 @@ export function App() {
       {paintDraft && (
         <PaintDialog
           draft={paintDraft}
+          editing={Boolean(editingPaintedPeriod)}
           error={paintError}
           colorPopoverOpen={colorPopoverOpen}
           onClose={() => {
             setPaintDraft(null);
+            setEditingPaintedPeriod(null);
             setPaintError("");
             setColorPopoverOpen(false);
           }}

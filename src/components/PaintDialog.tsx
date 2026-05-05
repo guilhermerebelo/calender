@@ -6,6 +6,7 @@ import { PaintDraft } from "../types";
 
 type PaintDialogProps = {
   draft: PaintDraft;
+  editing: boolean;
   error: string;
   colorPopoverOpen: boolean;
   onClose: () => void;
@@ -17,6 +18,7 @@ type PaintDialogProps = {
 
 export function PaintDialog({
   draft,
+  editing,
   error,
   colorPopoverOpen,
   onClose,
@@ -35,7 +37,7 @@ export function PaintDialog({
       >
         <div className="flex items-center justify-between gap-3 border-b border-slate-800 p-4">
           <div>
-            <span className={eyebrowClass}>Pintar calendario</span>
+            <span className={eyebrowClass}>{editing ? "Editar pintura" : "Pintar calendario"}</span>
             <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">Periodo</h2>
           </div>
           <button className={iconButtonClass} type="button" onClick={onClose} aria-label="Fechar">
@@ -55,7 +57,7 @@ export function PaintDialog({
             </label>
           </div>
 
-          <div className="relative grid gap-2 text-sm font-extrabold text-slate-300">
+          <div className="grid gap-2 text-sm font-extrabold text-slate-300">
             <span>Cor</span>
             <button className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 font-extrabold text-slate-100 shadow-sm shadow-black/20" type="button" onClick={onColorPopoverToggle}>
               <span className="h-[18px] w-[18px] rounded border border-slate-600" style={{ backgroundColor: draft.color }} />
@@ -63,7 +65,7 @@ export function PaintDialog({
               <Palette size={16} />
             </button>
             {colorPopoverOpen && (
-              <div className="absolute left-0 top-full z-50 mt-2 grid w-full max-w-[300px] grid-cols-2 gap-1.5 rounded-lg border border-slate-700 bg-slate-950 p-2 shadow-2xl shadow-black/40">
+              <div className="grid max-h-56 w-full grid-cols-2 gap-1.5 overflow-auto rounded-lg border border-slate-700 bg-slate-950 p-2 shadow-2xl shadow-black/40 sm:grid-cols-4">
                 {paintColors.map((color) => (
                   <button
                     className={`flex items-center gap-2 rounded-md border p-2 text-left text-slate-100 hover:bg-slate-900 ${
@@ -92,7 +94,7 @@ export function PaintDialog({
               Periodos pintados nao podem sobrescrever outros dias pintados.
             </span>
             <button className="h-9 rounded-md border border-cyan-500 bg-cyan-500 px-4 text-sm font-extrabold text-slate-950 transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-300" type="submit">
-              Pintar periodo
+              {editing ? "Salvar pintura" : "Pintar periodo"}
             </button>
           </div>
         </form>

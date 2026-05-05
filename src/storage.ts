@@ -3,7 +3,6 @@ import { nextHour } from "./timeUtils";
 
 const EVENTS_STORAGE_KEY = "calender:eventos";
 const PAINT_STORAGE_KEY = "calender:pinturas";
-const EXPANDED_DAYS_STORAGE_KEY = "calender:dias-expandidos";
 const RIGHT_PANEL_OPEN_STORAGE_KEY = "calender:painel-direito-aberto";
 
 function isDateKey(value: unknown): value is string {
@@ -94,21 +93,6 @@ export function loadPaintedPeriods(): PaintedPeriod[] {
 
 export function savePaintedPeriods(periods: PaintedPeriod[]) {
   localStorage.setItem(PAINT_STORAGE_KEY, JSON.stringify(periods));
-}
-
-export function loadExpandedDays(): string[] {
-  try {
-    const stored = localStorage.getItem(EXPANDED_DAYS_STORAGE_KEY);
-    if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed.filter(isDateKey) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function saveExpandedDays(days: string[]) {
-  localStorage.setItem(EXPANDED_DAYS_STORAGE_KEY, JSON.stringify(days));
 }
 
 export function loadRightPanelOpen(): boolean {
