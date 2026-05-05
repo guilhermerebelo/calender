@@ -1,19 +1,10 @@
 import { PaintedPeriod, TravelEvent } from "./types";
+import { nextHour } from "./timeUtils";
 
 const EVENTS_STORAGE_KEY = "calender:eventos";
 const PAINT_STORAGE_KEY = "calender:pinturas";
 const EXPANDED_DAYS_STORAGE_KEY = "calender:dias-expandidos";
 const RIGHT_PANEL_OPEN_STORAGE_KEY = "calender:painel-direito-aberto";
-
-function addOneHour(time: string) {
-  const [hour = "9", minute = "0"] = time.split(":");
-  const numericHour = Number(hour);
-
-  if (!Number.isFinite(numericHour)) return "10:00";
-  if (numericHour >= 23) return "23:59";
-
-  return `${String(numericHour + 1).padStart(2, "0")}:${minute.padStart(2, "0")}`;
-}
 
 function isDateKey(value: unknown): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -38,13 +29,13 @@ export function loadEvents(): TravelEvent[] {
 
       const startTime = event.startTime ?? event.time ?? "09:00";
       const normalizedStartTime = isTime(startTime) ? startTime : "09:00";
-      const normalizedEndTime = isTime(event.endTime) ? event.endTime : addOneHour(normalizedStartTime);
+      const normalizedEndTime = isTime(event.endTime) ? event.endTime : nextHour(normalizedStartTime);
 
       return [{
         id: isString(event.id) && event.id ? event.id : crypto.randomUUID(),
         date: event.date,
         startTime: normalizedStartTime,
-        endTime: normalizedEndTime > normalizedStartTime ? normalizedEndTime : addOneHour(normalizedStartTime),
+        endTime: normalizedEndTime > normalizedStartTime ? normalizedEndTime : nextHour(normalizedStartTime),
         title: event.title,
         comments: isString(event.comments) ? event.comments : "",
         createdAt: isString(event.createdAt) ? event.createdAt : new Date().toISOString(),
