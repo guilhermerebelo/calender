@@ -11,6 +11,8 @@ import {
   MessageSquare,
   Paintbrush,
   Palette,
+  PanelRightClose,
+  PanelRightOpen,
   Plus,
   Trash2,
   X,
@@ -29,9 +31,11 @@ import {
   loadEvents,
   loadExpandedDays,
   loadPaintedPeriods,
+  loadRightPanelOpen,
   saveEvents,
   saveExpandedDays,
   savePaintedPeriods,
+  saveRightPanelOpen,
 } from "./storage";
 import { EventDraft, PaintColor, PaintedPeriod, PaintDraft, TravelEvent } from "./types";
 
@@ -51,15 +55,15 @@ const paintColors: PaintColor[] = [
 
 const defaultColor = paintColors[0];
 
-const panelClass = "min-w-0 rounded-lg border border-slate-200 bg-white shadow-xl shadow-slate-950/10";
+const panelClass = "min-w-0 rounded-lg border border-slate-800 bg-slate-950 shadow-xl shadow-black/30";
 const iconButtonClass =
-  "grid h-9 w-9 place-items-center rounded-md border border-slate-200 bg-white text-slate-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800";
+  "grid h-9 w-9 place-items-center rounded-md border border-slate-700 bg-slate-900 text-slate-200 transition hover:border-cyan-400 hover:bg-cyan-950 hover:text-cyan-100";
 const miniButtonClass =
-  "grid h-8 w-8 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-800";
-const eyebrowClass = "block text-[0.68rem] font-extrabold uppercase tracking-normal text-teal-700";
-const metaClass = "flex items-center gap-2 text-xs text-slate-500";
+  "grid h-8 w-8 place-items-center rounded-md border border-slate-700 bg-slate-900 text-slate-300 transition hover:border-cyan-400 hover:bg-cyan-950 hover:text-cyan-100";
+const eyebrowClass = "block text-[0.68rem] font-extrabold uppercase tracking-normal text-cyan-300";
+const metaClass = "flex items-center gap-2 text-xs text-slate-400";
 const inputClass =
-  "w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100";
+  "w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2.5 text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-500/20";
 
 function nextHour(time: string) {
   const [hour = "9", minute = "0"] = time.split(":");
@@ -91,10 +95,12 @@ export function App() {
   const [paintDraft, setPaintDraft] = useState<PaintDraft | null>(null);
   const [paintError, setPaintError] = useState("");
   const [colorPopoverOpen, setColorPopoverOpen] = useState(false);
+  const [rightPanelOpen, setRightPanelOpen] = useState(() => loadRightPanelOpen());
 
   useEffect(() => saveEvents(events), [events]);
   useEffect(() => savePaintedPeriods(paintedPeriods), [paintedPeriods]);
   useEffect(() => saveExpandedDays([...expandedDays]), [expandedDays]);
+  useEffect(() => saveRightPanelOpen(rightPanelOpen), [rightPanelOpen]);
 
   useEffect(() => {
     const closeMenu = () => setContextMenu(null);
@@ -270,20 +276,23 @@ export function App() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 font-sans text-slate-900 lg:h-screen lg:overflow-hidden">
-      <div className="grid min-h-screen gap-4 p-3 lg:h-screen lg:grid-cols-[minmax(0,1fr)_370px] lg:p-4">
+    <main className="min-h-screen bg-slate-950 font-sans text-slate-100 lg:h-screen lg:overflow-hidden">
+      <div className={`grid min-h-screen gap-4 p-3 lg:h-screen lg:p-4 ${rightPanelOpen ? "lg:grid-cols-[minmax(0,1fr)_370px]" : "lg:grid-cols-1"}`}>
         <section className={`${panelClass} flex min-h-0 flex-col p-3.5`} aria-label="Calendario">
-          <header className="flex min-h-[50px] items-center justify-between gap-3 border-b border-slate-200 pb-3">
+          <header className="flex min-h-[50px] items-center justify-between gap-3 border-b border-slate-800 pb-3">
             <div>
-              <span className={eyebrowClass}>Calendario</span>
-              <h1 className="mt-1 text-[clamp(1.32rem,1.75vw,1.85rem)] font-extrabold leading-tight text-slate-950">{monthLabel(visibleMonth)}</h1>
+              <span className={`${eyebrowClass} inline-flex items-center gap-1.5`}>
+                <CalendarDays size={14} />
+                Calendario
+              </span>
+              <h1 className="mt-1 text-[clamp(1.32rem,1.75vw,1.85rem)] font-extrabold leading-tight text-white">{monthLabel(visibleMonth)}</h1>
             </div>
             <div className="flex items-center gap-2">
               <button className={iconButtonClass} type="button" onClick={() => setVisibleMonth(addMonths(visibleMonth, -1))} aria-label="Mes anterior">
                 <ChevronLeft size={18} />
               </button>
               <button
-                className="h-9 rounded-md border border-teal-700 bg-teal-700 px-4 text-sm font-extrabold text-white transition hover:border-teal-800 hover:bg-teal-800"
+                className="h-9 rounded-md border border-cyan-500 bg-cyan-500 px-4 text-sm font-extrabold text-slate-950 transition hover:border-cyan-300 hover:bg-cyan-300"
                 type="button"
                 onClick={() => setVisibleMonth(new Date())}
               >
@@ -292,18 +301,27 @@ export function App() {
               <button className={iconButtonClass} type="button" onClick={() => setVisibleMonth(addMonths(visibleMonth, 1))} aria-label="Proximo mes">
                 <ChevronRight size={18} />
               </button>
+              <button
+                className={iconButtonClass}
+                type="button"
+                onClick={() => setRightPanelOpen((open) => !open)}
+                aria-label={rightPanelOpen ? "Fechar painel direito" : "Abrir painel direito"}
+                title={rightPanelOpen ? "Fechar painel" : "Abrir painel"}
+              >
+                {rightPanelOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+              </button>
             </div>
           </header>
 
           <div className="mt-3 grid grid-cols-7 gap-2">
             {weekDays.map((day) => (
-              <span className="rounded-md bg-slate-200 px-2 py-1.5 text-center text-[0.72rem] font-black text-slate-600" key={day}>
+              <span className="rounded-md bg-slate-900 px-2 py-1.5 text-center text-[0.72rem] font-black text-slate-300" key={day}>
                 {day}
               </span>
             ))}
           </div>
 
-          <div className="mt-2 grid min-h-[520px] flex-1 grid-cols-7 grid-rows-6 gap-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 p-2 lg:min-h-0 lg:max-h-[calc(100vh-118px)]">
+          <div className="mt-2 grid min-h-[520px] flex-1 grid-cols-7 grid-rows-6 gap-2 overflow-hidden rounded-lg border border-slate-800 bg-slate-900 p-2 lg:min-h-0 lg:max-h-[calc(100vh-118px)]">
             {monthDays.map((day) => {
               const dayEvents = eventsByDate[day.key] ?? [];
               const expanded = expandedDays.has(day.key);
@@ -317,9 +335,9 @@ export function App() {
 
               return (
                 <div
-                  className={`min-h-0 cursor-pointer overflow-hidden rounded-lg border p-1.5 text-left outline-none transition hover:-translate-y-0.5 hover:border-teal-300 hover:shadow-md ${
-                    day.inCurrentMonth ? "border-slate-200 bg-white text-slate-900" : "border-slate-100 bg-slate-100 text-slate-400"
-                  } ${day.isToday ? "ring-2 ring-teal-500/60" : ""}`}
+                  className={`min-h-0 cursor-pointer overflow-hidden rounded-lg border p-1.5 text-left outline-none transition hover:-translate-y-0.5 hover:border-cyan-400 hover:shadow-md hover:shadow-cyan-950/40 ${
+                    day.inCurrentMonth ? "border-slate-700 bg-slate-950 text-slate-100" : "border-slate-800 bg-slate-900 text-slate-500"
+                  } ${day.isToday ? "ring-2 ring-cyan-400/70" : ""}`}
                   key={day.key}
                   onClick={() => setDayViewDate(day.key)}
                   onContextMenu={(event) => handleDayContextMenu(event, day.key)}
@@ -329,12 +347,12 @@ export function App() {
                   tabIndex={0}
                 >
                   <div className="flex items-center justify-between gap-1">
-                    <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-100 font-mono text-sm font-black">{day.date.getDate()}</span>
+                    <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-800 font-mono text-sm font-black">{day.date.getDate()}</span>
                     <div className="flex items-center gap-1">
                       {painted && <span className="h-2 w-2 rounded-full" style={{ backgroundColor: painted.color }} title={painted.colorName} />}
                       {dayEvents.length > 0 && (
                         <button
-                          className="inline-flex h-6 items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-1.5 text-[0.72rem] font-black text-slate-600 hover:bg-teal-50 hover:text-teal-800"
+                          className="inline-flex h-6 items-center gap-1 rounded-md border border-slate-700 bg-slate-900 px-1.5 text-[0.72rem] font-black text-slate-300 hover:bg-cyan-950 hover:text-cyan-100"
                           type="button"
                           onClick={(event) => toggleDayExpansion(event, day.key)}
                           aria-label="Mostrar eventos"
@@ -348,7 +366,7 @@ export function App() {
                   {expanded && (
                     <div className="mt-1.5 flex min-w-0 flex-col gap-1">
                       {dayEvents.map((event) => (
-                        <span className="block truncate rounded border border-teal-100 bg-teal-50 px-1.5 py-1 text-[0.68rem] text-teal-900" key={event.id}>
+                        <span className="block truncate rounded border border-cyan-500/30 bg-cyan-500/10 px-1.5 py-1 text-[0.68rem] text-cyan-100" key={event.id}>
                           {event.startTime}-{event.endTime} {event.title}
                         </span>
                       ))}
@@ -360,28 +378,37 @@ export function App() {
           </div>
         </section>
 
+        {rightPanelOpen && (
         <aside className={`${panelClass} flex min-h-[420px] flex-col p-3.5`} aria-label="Eventos cadastrados">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <span className={eyebrowClass}>Roteiro</span>
-              <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">Eventos</h2>
+              <span className={`${eyebrowClass} inline-flex items-center gap-1.5`}>
+                <Clock size={14} />
+                Roteiro
+              </span>
+              <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">Eventos</h2>
             </div>
-            <button className={iconButtonClass} type="button" onClick={() => openCreateEvent(toDateKey(new Date()))} aria-label="Adicionar evento">
-              <Plus size={18} />
-            </button>
+            <div className="flex items-center gap-2">
+              <button className={iconButtonClass} type="button" onClick={() => openCreateEvent(toDateKey(new Date()))} aria-label="Adicionar evento">
+                <Plus size={18} />
+              </button>
+              <button className={iconButtonClass} type="button" onClick={() => setRightPanelOpen(false)} aria-label="Fechar painel direito">
+                <PanelRightClose size={18} />
+              </button>
+            </div>
           </div>
 
           <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2.5 overflow-auto pr-1">
             {sortedEvents.length === 0 && (
-              <div className="grid min-h-48 place-items-center content-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-center text-slate-500">
+              <div className="grid min-h-48 place-items-center content-center gap-2 rounded-lg border border-dashed border-slate-700 bg-slate-900 p-5 text-center text-slate-400">
                 <CalendarDays size={30} />
-                <p className="m-0 font-extrabold text-slate-950">Nenhum evento cadastrado.</p>
+                <p className="m-0 font-extrabold text-white">Nenhum evento cadastrado.</p>
                 <span className="max-w-64 text-sm">Use o botao direito em um dia para adicionar o primeiro item.</span>
               </div>
             )}
 
             {sortedEvents.map((event) => (
-              <article className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm" key={event.id}>
+              <article className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-sm shadow-black/20" key={event.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <strong className="mb-2 block">{event.title}</strong>
@@ -397,7 +424,7 @@ export function App() {
                       <Edit3 size={14} />
                     </button>
                     <button
-                      className={`${miniButtonClass} hover:border-red-300 hover:bg-red-50 hover:text-red-700`}
+                      className={`${miniButtonClass} hover:border-red-400 hover:bg-red-950 hover:text-red-200`}
                       type="button"
                       onClick={() => setEvents((current) => current.filter((item) => item.id !== event.id))}
                       aria-label="Excluir evento"
@@ -407,7 +434,7 @@ export function App() {
                   </div>
                 </div>
                 {event.comments && (
-                  <p className="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-slate-500">
+                  <p className="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-slate-400">
                     <MessageSquare className="mt-0.5 shrink-0" size={14} /> {event.comments}
                   </p>
                 )}
@@ -415,26 +442,29 @@ export function App() {
             ))}
           </div>
 
-          <div className="mt-3 flex max-h-[34vh] min-h-48 flex-col border-t border-slate-200 pt-3">
+          <div className="mt-3 flex max-h-[34vh] min-h-48 flex-col border-t border-slate-800 pt-3">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <span className={eyebrowClass}>Calendario pintado</span>
-                <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">Dias</h2>
+                <span className={`${eyebrowClass} inline-flex items-center gap-1.5`}>
+                  <Palette size={14} />
+                  Calendario pintado
+                </span>
+                <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">Dias</h2>
               </div>
-              <Layers size={18} />
+              <Layers className="text-slate-300" size={18} />
             </div>
             <div className="mt-2.5 flex flex-col gap-2 overflow-auto pr-1">
-              {sortedPaints.length === 0 && <p className="text-xs text-slate-500">Nenhum periodo pintado.</p>}
+              {sortedPaints.length === 0 && <p className="text-xs text-slate-400">Nenhum periodo pintado.</p>}
               {sortedPaints.map((period) => (
-                <article className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg border border-slate-200 bg-white p-3 shadow-sm" key={period.id}>
-                  <span className="h-[18px] w-[18px] rounded border border-slate-300" style={{ backgroundColor: period.color }} />
+                <article className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-sm shadow-black/20" key={period.id}>
+                  <span className="h-[18px] w-[18px] rounded border border-slate-600" style={{ backgroundColor: period.color }} />
                   <div>
                     <strong className="mb-1.5 block">{period.colorName}</strong>
-                    <span className="block text-xs text-slate-500">{fullDateLabel(period.startDate)}</span>
-                    {period.startDate !== period.endDate && <span className="block text-xs text-slate-500">{fullDateLabel(period.endDate)}</span>}
+                    <span className="block text-xs text-slate-400">{fullDateLabel(period.startDate)}</span>
+                    {period.startDate !== period.endDate && <span className="block text-xs text-slate-400">{fullDateLabel(period.endDate)}</span>}
                   </div>
                   <button
-                    className={`${miniButtonClass} hover:border-red-300 hover:bg-red-50 hover:text-red-700`}
+                    className={`${miniButtonClass} hover:border-red-400 hover:bg-red-950 hover:text-red-200`}
                     type="button"
                     onClick={() => setPaintedPeriods((current) => current.filter((item) => item.id !== period.id))}
                     aria-label="Remover pintura"
@@ -446,19 +476,20 @@ export function App() {
             </div>
           </div>
         </aside>
+        )}
       </div>
 
       {contextMenu && (
         <div
-          className="fixed z-40 min-w-52 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl"
+          className="fixed z-40 min-w-52 overflow-hidden rounded-lg border border-slate-700 bg-slate-950 shadow-2xl shadow-black/40"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(event) => event.stopPropagation()}
         >
-          <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-slate-800 hover:bg-teal-50 hover:text-teal-800" type="button" onClick={() => openCreateEvent(contextMenu.date)}>
+          <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-slate-200 hover:bg-cyan-950 hover:text-cyan-100" type="button" onClick={() => openCreateEvent(contextMenu.date)}>
             <Plus size={16} />
             Adicionar evento
           </button>
-          <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-slate-800 hover:bg-teal-50 hover:text-teal-800" type="button" onClick={() => openPaintCalendar(contextMenu.date)}>
+          <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-slate-200 hover:bg-cyan-950 hover:text-cyan-100" type="button" onClick={() => openPaintCalendar(contextMenu.date)}>
             <Paintbrush size={16} />
             Pintar calendario
           </button>
@@ -467,11 +498,11 @@ export function App() {
 
       {dayViewDate && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/60 p-4" role="presentation" onMouseDown={() => setDayViewDate(null)}>
-          <section className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+          <section className="flex max-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 p-4">
               <div>
                 <span className={eyebrowClass}>Visao do dia</span>
-                <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">{fullDateLabel(dayViewDate)}</h2>
+                <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">{fullDateLabel(dayViewDate)}</h2>
               </div>
               <button className={iconButtonClass} type="button" onClick={() => setDayViewDate(null)} aria-label="Fechar">
                 <X size={18} />
@@ -482,20 +513,20 @@ export function App() {
               {dayHours.map((hour) => {
                 const hourEvents = selectedDayEvents.filter((event) => event.startTime.startsWith(hour.slice(0, 2)));
                 return (
-                  <div className="grid border-b border-slate-100 sm:grid-cols-[78px_minmax(0,1fr)]" key={hour}>
-                    <button className="min-h-9 border-b border-slate-100 bg-slate-50 font-mono text-sm font-black text-slate-500 hover:bg-teal-50 hover:text-teal-800 sm:border-b-0 sm:border-r" type="button" onClick={() => openCreateEvent(dayViewDate, hour)}>
+                  <div className="grid border-b border-slate-800 sm:grid-cols-[78px_minmax(0,1fr)]" key={hour}>
+                    <button className="min-h-9 border-b border-slate-800 bg-slate-900 font-mono text-sm font-black text-slate-400 hover:bg-cyan-950 hover:text-cyan-100 sm:border-b-0 sm:border-r" type="button" onClick={() => openCreateEvent(dayViewDate, hour)}>
                       {hour}
                     </button>
                     <div className="flex min-h-[52px] flex-col justify-center gap-2 px-2.5 py-2">
-                      {hourEvents.length === 0 && <span className="text-sm text-slate-400">Livre</span>}
+                      {hourEvents.length === 0 && <span className="text-sm text-slate-500">Livre</span>}
                       {hourEvents.map((event) => (
-                        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm" key={event.id}>
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900 p-2.5 shadow-sm shadow-black/20" key={event.id}>
                           <div>
                             <strong>{event.title}</strong>
-                            <span className="mt-0.5 block text-xs text-slate-500">
+                            <span className="mt-0.5 block text-xs text-slate-400">
                               {event.startTime} ate {event.endTime}
                             </span>
-                            {event.comments && <p className="mt-1 text-sm text-slate-500">{event.comments}</p>}
+                            {event.comments && <p className="mt-1 text-sm text-slate-400">{event.comments}</p>}
                           </div>
                           <button className={miniButtonClass} type="button" onClick={() => openEditEvent(event)} aria-label="Editar evento">
                             <Edit3 size={14} />
@@ -513,11 +544,11 @@ export function App() {
 
       {draft && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/60 p-4" role="presentation" onMouseDown={closeEventForm}>
-          <section className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+          <section className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 p-4">
               <div>
                 <span className={eyebrowClass}>{editingEvent ? "Editar" : "Novo"} evento</span>
-                <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">{fullDateLabel(draft.date)}</h2>
+                <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">{fullDateLabel(draft.date)}</h2>
               </div>
               <button className={iconButtonClass} type="button" onClick={closeEventForm} aria-label="Fechar">
                 <X size={18} />
@@ -525,25 +556,25 @@ export function App() {
             </div>
 
             <form className="grid gap-4 p-4" onSubmit={submitEvent}>
-              <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+              <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                 Titulo
                 <input className={inputClass} value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} autoFocus required />
               </label>
               <div className="grid gap-3 md:grid-cols-[1.2fr_1fr_1fr]">
-                <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                   Data
                   <input className={inputClass} type="date" value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} required />
                 </label>
-                <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                   Inicio
                   <input className={inputClass} type="time" value={draft.startTime} onChange={(event) => setDraft({ ...draft, startTime: event.target.value })} required />
                 </label>
-                <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                   Fim
                   <input className={inputClass} type="time" value={draft.endTime} onChange={(event) => setDraft({ ...draft, endTime: event.target.value })} required />
                 </label>
               </div>
-              <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+              <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                 Comentarios
                 <textarea className={`${inputClass} resize-y`} value={draft.comments} onChange={(event) => setDraft({ ...draft, comments: event.target.value })} rows={5} />
               </label>
@@ -552,7 +583,7 @@ export function App() {
                   <MapPin size={15} />
                   Planeje horarios, deslocamentos e reservas.
                 </span>
-                <button className="h-9 rounded-md border border-teal-700 bg-teal-700 px-4 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-teal-800" type="submit">
+                <button className="h-9 rounded-md border border-cyan-500 bg-cyan-500 px-4 text-sm font-extrabold text-slate-950 transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-300" type="submit">
                   Salvar evento
                 </button>
               </div>
@@ -563,11 +594,11 @@ export function App() {
 
       {paintDraft && (
         <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/60 p-4" role="presentation" onMouseDown={closePaintForm}>
-          <section className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-hidden rounded-lg border border-slate-200 bg-white shadow-2xl" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+          <section className="max-h-[calc(100vh-2rem)] w-full max-w-3xl overflow-hidden rounded-lg border border-slate-800 bg-slate-950 shadow-2xl shadow-black/40" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 p-4">
               <div>
                 <span className={eyebrowClass}>Pintar calendario</span>
-                <h2 className="mt-1 text-lg font-extrabold leading-tight text-slate-950">Periodo</h2>
+                <h2 className="mt-1 text-lg font-extrabold leading-tight text-white">Periodo</h2>
               </div>
               <button className={iconButtonClass} type="button" onClick={closePaintForm} aria-label="Fechar">
                 <X size={18} />
@@ -576,29 +607,29 @@ export function App() {
 
             <form className="grid gap-4 p-4" onSubmit={submitPaint}>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                   Inicio
                   <input className={inputClass} type="date" value={paintDraft.startDate} onChange={(event) => setPaintDraft({ ...paintDraft, startDate: event.target.value })} required />
                 </label>
-                <label className="grid gap-2 text-sm font-extrabold text-slate-700">
+                <label className="grid gap-2 text-sm font-extrabold text-slate-300">
                   Fim
                   <input className={inputClass} type="date" value={paintDraft.endDate} onChange={(event) => setPaintDraft({ ...paintDraft, endDate: event.target.value })} required />
                 </label>
               </div>
 
-              <div className="relative grid gap-2 text-sm font-extrabold text-slate-700">
+              <div className="relative grid gap-2 text-sm font-extrabold text-slate-300">
                 <span>Cor</span>
-                <button className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 font-extrabold text-slate-800 shadow-sm" type="button" onClick={() => setColorPopoverOpen((open) => !open)}>
-                  <span className="h-[18px] w-[18px] rounded border border-slate-300" style={{ backgroundColor: paintDraft.color }} />
+                <button className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 font-extrabold text-slate-100 shadow-sm shadow-black/20" type="button" onClick={() => setColorPopoverOpen((open) => !open)}>
+                  <span className="h-[18px] w-[18px] rounded border border-slate-600" style={{ backgroundColor: paintDraft.color }} />
                   {paintDraft.colorName}
                   <Palette size={16} />
                 </button>
                 {colorPopoverOpen && (
-                  <div className="absolute left-0 top-full z-50 mt-2 grid w-full max-w-[300px] grid-cols-2 gap-1.5 rounded-lg border border-slate-200 bg-white p-2 shadow-2xl">
+                  <div className="absolute left-0 top-full z-50 mt-2 grid w-full max-w-[300px] grid-cols-2 gap-1.5 rounded-lg border border-slate-700 bg-slate-950 p-2 shadow-2xl shadow-black/40">
                     {paintColors.map((color) => (
                       <button
-                        className={`flex items-center gap-2 rounded-md border p-2 text-left text-slate-800 hover:bg-slate-50 ${
-                          paintDraft.color === color.value ? "border-teal-500 bg-teal-50" : "border-transparent"
+                        className={`flex items-center gap-2 rounded-md border p-2 text-left text-slate-100 hover:bg-slate-900 ${
+                          paintDraft.color === color.value ? "border-cyan-400 bg-cyan-500/10" : "border-transparent"
                         }`}
                         key={color.id}
                         type="button"
@@ -615,14 +646,14 @@ export function App() {
                 )}
               </div>
 
-              {paintError && <p className="m-0 rounded-md border border-red-200 bg-red-50 p-2.5 text-sm font-semibold text-red-700">{paintError}</p>}
+              {paintError && <p className="m-0 rounded-md border border-red-500/40 bg-red-950 p-2.5 text-sm font-semibold text-red-200">{paintError}</p>}
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className={metaClass}>
                   <Paintbrush size={15} />
                   Periodos pintados nao podem sobrescrever outros dias pintados.
                 </span>
-                <button className="h-9 rounded-md border border-teal-700 bg-teal-700 px-4 text-sm font-extrabold text-white transition hover:-translate-y-0.5 hover:bg-teal-800" type="submit">
+                <button className="h-9 rounded-md border border-cyan-500 bg-cyan-500 px-4 text-sm font-extrabold text-slate-950 transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-300" type="submit">
                   Pintar periodo
                 </button>
               </div>

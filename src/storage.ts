@@ -3,6 +3,7 @@ import { PaintedPeriod, TravelEvent } from "./types";
 const EVENTS_STORAGE_KEY = "calender:eventos";
 const PAINT_STORAGE_KEY = "calender:pinturas";
 const EXPANDED_DAYS_STORAGE_KEY = "calender:dias-expandidos";
+const RIGHT_PANEL_OPEN_STORAGE_KEY = "calender:painel-direito-aberto";
 
 function addOneHour(time: string) {
   const [hour = "9", minute = "0"] = time.split(":");
@@ -110,4 +111,16 @@ export function loadExpandedDays(): string[] {
 
 export function saveExpandedDays(days: string[]) {
   localStorage.setItem(EXPANDED_DAYS_STORAGE_KEY, JSON.stringify(days));
+}
+
+export function loadRightPanelOpen(): boolean {
+  try {
+    return localStorage.getItem(RIGHT_PANEL_OPEN_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+export function saveRightPanelOpen(open: boolean) {
+  localStorage.setItem(RIGHT_PANEL_OPEN_STORAGE_KEY, String(open));
 }
