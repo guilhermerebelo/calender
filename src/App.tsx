@@ -8,9 +8,11 @@ import { PaintDialog } from "./components/PaintDialog";
 import { defaultColor } from "./constants";
 import { eachDateKeyInRange, fullDateLabel } from "./dateUtils";
 import {
+  loadDatabase,
   loadEvents,
   loadPaintedPeriods,
   loadRightPanelOpen,
+  saveDatabase,
   saveEvents,
   savePaintedPeriods,
   saveRightPanelOpen,
@@ -50,10 +52,40 @@ export function App() {
   const [paintError, setPaintError] = useState("");
   const [colorPopoverOpen, setColorPopoverOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(() => loadRightPanelOpen());
+  const [databaseReady, setDatabaseReady] = useState(false);
 
   useEffect(() => saveEvents(events), [events]);
   useEffect(() => savePaintedPeriods(paintedPeriods), [paintedPeriods]);
   useEffect(() => saveRightPanelOpen(rightPanelOpen), [rightPanelOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadDatabase()
+      .then((database) => {
+        if (cancelled) return;
+
+        const localEvents = loadEvents();
+        const localPaintedPeriods = loadPaintedPeriods();
+        const nextEvents = database.events.length > 0 || localEvents.length === 0 ? database.events : localEvents;
+        const nextPaintedPeriods =
+          database.paintedPeriods.length > 0 || localPaintedPeriods.length === 0 ? database.paintedPeriods : localPaintedPeriods;
+
+        setEvents(nextEvents);
+        setPaintedPeriods(nextPaintedPeriods);
+        setDatabaseReady(true);
+      })
+      .catch(() => setDatabaseReady(false));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!databaseReady) return;
+    saveDatabase({ events, paintedPeriods }).catch((error) => console.error(error));
+  }, [databaseReady, events, paintedPeriods]);
 
   useEffect(() => {
     const closeMenu = () => setContextMenu(null);

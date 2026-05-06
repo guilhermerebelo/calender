@@ -1,7 +1,9 @@
 {
   "name": "calendario",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "node scripts/dev.mjs",
+    "dev:front": "vite --host 0.0.0.0",
+    "dev:api": "node server.mjs",
     "build": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.node.json --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0"
   },
