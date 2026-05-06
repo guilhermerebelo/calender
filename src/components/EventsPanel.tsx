@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronDown, ChevronRight, Clock, Edit3, Layers, MessageSquare, Palette, PanelRightClose, Plus, Trash2 } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronRight, Clock, Edit3, Layers, Palette, PanelRightClose, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { fullDateLabel, toDateKey } from "../dateUtils";
 import { eyebrowClass, iconButtonClass, metaClass, miniButtonClass, panelClass } from "../uiClasses";
@@ -66,36 +66,26 @@ export function EventsPanel({
             )}
 
             {events.map((event) => (
-              <article className="rounded-lg border border-slate-800 bg-slate-900 p-3 shadow-sm shadow-black/20" key={event.id}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <strong className="mb-2 block">{event.title}</strong>
-                    <span className={metaClass}>
-                      <CalendarDays size={14} /> {eventDateLabel(event)}
-                    </span>
-                    <span className={`${metaClass} mt-1`}>
-                      <Clock size={14} /> {event.startTime} ate {event.endTime}
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    <button className={miniButtonClass} type="button" onClick={() => onEditEvent(event)} aria-label="Editar evento">
-                      <Edit3 size={14} />
-                    </button>
-                    <button
-                      className={`${miniButtonClass} hover:border-red-400 hover:bg-red-950 hover:text-red-200`}
-                      type="button"
-                      onClick={() => onDeleteEvent(event.id)}
-                      aria-label="Excluir evento"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+              <article className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-md border border-slate-800 bg-slate-900 px-2.5 py-2 shadow-sm shadow-black/20" key={event.id}>
+                <div className="min-w-0">
+                  <strong className="block truncate text-sm leading-tight text-slate-100">{event.title}</strong>
+                  <span className={`${metaClass} mt-0.5`}>
+                    <CalendarDays size={13} /> {eventDateLabel(event)}
+                  </span>
                 </div>
-                {event.comments && (
-                  <p className="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-slate-400">
-                    <MessageSquare className="mt-0.5 shrink-0" size={14} /> {event.comments}
-                  </p>
-                )}
+                <div className="flex gap-1.5">
+                  <button className={miniButtonClass} type="button" onClick={() => onEditEvent(event)} aria-label="Editar evento">
+                    <Edit3 size={14} />
+                  </button>
+                  <button
+                    className={`${miniButtonClass} hover:border-red-400 hover:bg-red-950 hover:text-red-200`}
+                    type="button"
+                    onClick={() => onDeleteEvent(event.id)}
+                    aria-label="Excluir evento"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </article>
             ))}
           </div>
