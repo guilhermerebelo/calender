@@ -4,17 +4,14 @@ import { ContextMenu } from "./components/ContextMenu";
 import { DayDialog } from "./components/DayDialog";
 import { EventDialog } from "./components/EventDialog";
 import { EventsPanel } from "./components/EventsPanel";
+import { GanttPanel } from "./components/GanttPanel";
 import { PaintDialog } from "./components/PaintDialog";
 import { defaultColor } from "./constants";
 import { eachDateKeyInRange, fullDateLabel } from "./dateUtils";
 import {
   loadDatabase,
-  loadEvents,
-  loadPaintedPeriods,
   loadRightPanelOpen,
   saveDatabase,
-  saveEvents,
-  savePaintedPeriods,
   saveRightPanelOpen,
 } from "./storage";
 import { nextHour } from "./timeUtils";
@@ -29,6 +26,8 @@ type DaySelection = DateRange & {
   anchorDate: string;
 };
 
+type ViewMode = "calendar" | "gantt";
+
 const emptyDraft = (date: string, startTime = "09:00", range: DateRange = { startDate: date, endDate: date }): EventDraft => ({
   title: "",
   startDate: range.startDate,
@@ -40,8 +39,9 @@ const emptyDraft = (date: string, startTime = "09:00", range: DateRange = { star
 
 export function App() {
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
-  const [events, setEvents] = useState<TravelEvent[]>(() => loadEvents());
-  const [paintedPeriods, setPaintedPeriods] = useState<PaintedPeriod[]>(() => loadPaintedPeriods());
+  const [events, setEvents] = useState<TravelEvent[]>([]);
+  const [paintedPeriods, setPaintedPeriods] = useState<PaintedPeriod[]>([]);
+  const [viewMode, setViewMode] = useState<ViewMode>("calendar");
   const [selection, setSelection] = useState<DaySelection | null>(null);
   const [contextMenu, setContextMenu] = useState<({ x: number; y: number; date: string } & DateRange) | null>(null);
   const [dayViewDate, setDayViewDate] = useState<string | null>(null);
@@ -54,8 +54,6 @@ export function App() {
   const [rightPanelOpen, setRightPanelOpen] = useState(() => loadRightPanelOpen());
   const [databaseReady, setDatabaseReady] = useState(false);
 
-  useEffect(() => saveEvents(events), [events]);
-  useEffect(() => savePaintedPeriods(paintedPeriods), [paintedPeriods]);
   useEffect(() => saveRightPanelOpen(rightPanelOpen), [rightPanelOpen]);
 
   useEffect(() => {
@@ -65,14 +63,8 @@ export function App() {
       .then((database) => {
         if (cancelled) return;
 
-        const localEvents = loadEvents();
-        const localPaintedPeriods = loadPaintedPeriods();
-        const nextEvents = database.events.length > 0 || localEvents.length === 0 ? database.events : localEvents;
-        const nextPaintedPeriods =
-          database.paintedPeriods.length > 0 || localPaintedPeriods.length === 0 ? database.paintedPeriods : localPaintedPeriods;
-
-        setEvents(nextEvents);
-        setPaintedPeriods(nextPaintedPeriods);
+        setEvents(database.events);
+        setPaintedPeriods(database.paintedPeriods);
         setDatabaseReady(true);
       })
       .catch(() => setDatabaseReady(false));
@@ -299,19 +291,32 @@ export function App() {
   return (
     <main className="min-h-screen bg-slate-950 font-sans text-slate-100 lg:h-screen lg:overflow-hidden">
       <div className={`grid min-h-screen gap-2 p-1.5 lg:h-screen lg:p-2 ${rightPanelOpen ? "lg:grid-cols-[minmax(0,1fr)_370px]" : "lg:grid-cols-1"}`}>
-        <CalendarPanel
-          visibleMonth={visibleMonth}
-          eventsByDate={eventsByDate}
-          paintedPeriods={paintedPeriods}
-          rightPanelOpen={rightPanelOpen}
-          selectedRange={selection ? { startDate: selection.startDate, endDate: selection.endDate } : null}
-          onVisibleMonthChange={setVisibleMonth}
-          onRightPanelToggle={() => setRightPanelOpen((open) => !open)}
-          onDaySelect={handleDaySelect}
-          onDayCreate={(date) => openCreateEvent(date, "09:00", rangeFromSelectionOrDate(date))}
-          onDayView={setDayViewDate}
-          onDayContextMenu={handleDayContextMenu}
-        />
+        {viewMode === "calendar" ? (
+          <CalendarPanel
+            visibleMonth={visibleMonth}
+            eventsByDate={eventsByDate}
+            paintedPeriods={paintedPeriods}
+            rightPanelOpen={rightPanelOpen}
+            viewMode={viewMode}
+            selectedRange={selection ? { startDate: selection.startDate, endDate: selection.endDate } : null}
+            onVisibleMonthChange={setVisibleMonth}
+            onRightPanelToggle={() => setRightPanelOpen((open) => !open)}
+            onViewModeChange={setViewMode}
+            onDaySelect={handleDaySelect}
+            onDayCreate={(date) => openCreateEvent(date, "09:00", rangeFromSelectionOrDate(date))}
+            onDayView={setDayViewDate}
+            onDayContextMenu={handleDayContextMenu}
+          />
+        ) : (
+          <GanttPanel
+            events={sortedEvents}
+            rightPanelOpen={rightPanelOpen}
+            viewMode={viewMode}
+            onRightPanelToggle={() => setRightPanelOpen((open) => !open)}
+            onViewModeChange={setViewMode}
+            onEditEvent={openEditEvent}
+          />
+        )}
 
         {rightPanelOpen && (
           <EventsPanel

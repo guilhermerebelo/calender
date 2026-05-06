@@ -1,8 +1,6 @@
 import { PaintedPeriod, TravelEvent } from "./types";
 import { nextHour } from "./timeUtils";
 
-const EVENTS_STORAGE_KEY = "calender:eventos";
-const PAINT_STORAGE_KEY = "calender:pinturas";
 const RIGHT_PANEL_OPEN_STORAGE_KEY = "calender:painel-direito-aberto";
 
 export type TravelDatabase = {
@@ -77,34 +75,6 @@ function normalizePaintedPeriods(value: unknown): PaintedPeriod[] {
       createdAt: isString(period.createdAt) ? period.createdAt : new Date().toISOString(),
     }];
   });
-}
-
-export function loadEvents(): TravelEvent[] {
-  try {
-    const stored = localStorage.getItem(EVENTS_STORAGE_KEY);
-    if (!stored) return [];
-    return normalizeEvents(JSON.parse(stored));
-  } catch {
-    return [];
-  }
-}
-
-export function saveEvents(events: TravelEvent[]) {
-  localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(events));
-}
-
-export function loadPaintedPeriods(): PaintedPeriod[] {
-  try {
-    const stored = localStorage.getItem(PAINT_STORAGE_KEY);
-    if (!stored) return [];
-    return normalizePaintedPeriods(JSON.parse(stored));
-  } catch {
-    return [];
-  }
-}
-
-export function savePaintedPeriods(periods: PaintedPeriod[]) {
-  localStorage.setItem(PAINT_STORAGE_KEY, JSON.stringify(periods));
 }
 
 export async function loadDatabase(): Promise<TravelDatabase> {

@@ -14,12 +14,6 @@ type DayDialogProps = {
 };
 
 export function DayDialog({ date, events, onClose, onCreateEvent, onEditEvent, onDeleteEvent }: DayDialogProps) {
-  function eventDateLabel(event: TravelEvent) {
-    return event.startDate === event.endDate
-      ? fullDateLabel(event.startDate)
-      : `${fullDateLabel(event.startDate)} - ${fullDateLabel(event.endDate)}`;
-  }
-
   return (
     <div className="fixed inset-0 z-30 grid place-items-center bg-slate-950/60 p-4" role="presentation" onMouseDown={onClose}>
       <section
@@ -58,11 +52,6 @@ export function DayDialog({ date, events, onClose, onCreateEvent, onEditEvent, o
                         <div className="flex min-w-0 items-start justify-between gap-3 rounded-lg border border-slate-800 bg-slate-900 p-2.5 shadow-sm shadow-black/20" key={event.id}>
                           <div className="min-w-0">
                             <strong className="block truncate">{event.title}</strong>
-                            <span className="mt-0.5 block text-xs text-slate-400">
-                              {event.startTime} ate {event.endTime}
-                            </span>
-                            {event.startDate !== event.endDate && <span className="mt-0.5 block text-xs text-slate-500">{eventDateLabel(event)}</span>}
-                            {event.comments && <p className="mt-1 line-clamp-3 text-sm text-slate-400">{event.comments}</p>}
                           </div>
                           <div className="flex shrink-0 gap-1.5">
                             <button className={miniButtonClass} type="button" onClick={() => onEditEvent(event)} aria-label="Editar evento">

@@ -35,3 +35,4 @@ Thumbs.db
 # Misc
 coverage/
 *.local
+data/trip-db.json

@@ -16,9 +16,11 @@ type CalendarPanelProps = {
   eventsByDate: Record<string, TravelEvent[]>;
   paintedPeriods: PaintedPeriod[];
   rightPanelOpen: boolean;
+  viewMode: "calendar" | "gantt";
   selectedRange: { startDate: string; endDate: string } | null;
   onVisibleMonthChange: (date: Date) => void;
   onRightPanelToggle: () => void;
+  onViewModeChange: (mode: "calendar" | "gantt") => void;
   onDaySelect: (event: MouseEvent<HTMLDivElement>, date: string) => void;
   onDayCreate: (date: string) => void;
   onDayView: (date: string) => void;
@@ -30,9 +32,11 @@ export function CalendarPanel({
   eventsByDate,
   paintedPeriods,
   rightPanelOpen,
+  viewMode,
   selectedRange,
   onVisibleMonthChange,
   onRightPanelToggle,
+  onViewModeChange,
   onDaySelect,
   onDayCreate,
   onDayView,
@@ -67,6 +71,22 @@ export function CalendarPanel({
           </h1>
         </div>
         <div className="flex items-center gap-1.5">
+          <div className="grid grid-cols-2 overflow-hidden rounded-md border border-slate-700 bg-slate-900">
+            <button
+              className={`h-8 px-2.5 text-xs font-black ${viewMode === "calendar" ? "bg-cyan-500 text-slate-950" : "text-slate-300 hover:bg-cyan-950 hover:text-cyan-100"}`}
+              type="button"
+              onClick={() => onViewModeChange("calendar")}
+            >
+              Calendario
+            </button>
+            <button
+              className={`h-8 px-2.5 text-xs font-black ${viewMode === "gantt" ? "bg-cyan-500 text-slate-950" : "text-slate-300 hover:bg-cyan-950 hover:text-cyan-100"}`}
+              type="button"
+              onClick={() => onViewModeChange("gantt")}
+            >
+              Gantt
+            </button>
+          </div>
           <button className={compactIconButtonClass} type="button" onClick={() => onVisibleMonthChange(addMonths(visibleMonth, -1))} aria-label="Mes anterior">
             <ChevronLeft size={17} />
           </button>
